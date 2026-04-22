@@ -137,6 +137,43 @@ mermaid.initialize({
 });
 ```
 
+## imageUrlPolicy
+
+Use `imageUrlPolicy` to control external image URLs before Mermaid sets image sources.
+This is useful when diagram definitions may come from untrusted inputs.
+
+`imageUrlPolicy` receives `{ url }` and may return:
+
+- a `string` URL to allow (and optionally rewrite) the image URL
+- `null` to block loading that image URL
+
+The callback can be asynchronous.
+
+```javascript
+mermaid.initialize({
+  imageUrlPolicy: ({ url }) => {
+    const parsed = new URL(url, window.location.href);
+    return parsed.hostname === 'trusted-images.example.com' ? parsed.toString() : null;
+  },
+});
+```
+
+You can also use async user confirmation flows:
+
+```javascript
+mermaid.initialize({
+  imageUrlPolicy: async ({ url }) => {
+    if (new URL(url, window.location.href).hostname === 'trusted-images.example.com') {
+      return url;
+    }
+    return (await userAllowsLoadingImage(url)) ? url : null;
+  },
+});
+```
+
+> **Warning**
+> `imageUrlPolicy` is a site-level secure option. It cannot be overridden by frontmatter or directives.
+
 ### Labels out of bounds
 
 If you use dynamically loaded fonts that are loaded through CSS, such as fonts, mermaid should wait for the whole page to load (dom + assets, particularly the fonts file).
