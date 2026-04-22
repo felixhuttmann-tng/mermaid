@@ -222,6 +222,13 @@ properties:
         This prevent any JavaScript from running in the context.
         This may hinder interactive functionality of the diagram, like scripts, popups in the sequence diagram, or links to other tabs or targets, etc.
     default: strict
+  imageUrlPolicy:
+    description: |
+      Optional callback for controlling image URLs before Mermaid sets image attributes.
+      Mermaid calls this for external image URLs in diagram rendering code.
+      Return a URL string to allow (and optionally rewrite) the URL, or `null` to block loading.
+      This callback may be async to support user confirmation flows.
+    tsType: '({ url }: { url: string }) => string | null | Promise<string | null>'
   startOnLoad:
     description: Dictates whether mermaid starts on Page load
     type: boolean
@@ -242,6 +249,7 @@ properties:
       [
         'secure',
         'securityLevel',
+        'imageUrlPolicy',
         'startOnLoad',
         'maxTextSize',
         'suppressErrorRendering',

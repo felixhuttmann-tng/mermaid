@@ -1,3 +1,4 @@
+import { sanitizeUrl } from '@braintree/sanitize-url';
 import rough from 'roughjs';
 import { log } from '../../../logger.js';
 import type { Node, ShapeRenderOptions } from '../../types.js';
@@ -5,26 +6,33 @@ import intersect from '../intersect/index.js';
 import { styles2String, userNodeOverrides } from './handDrawnShapeStyles.js';
 import { labelHelper, updateNodeBounds } from './util.js';
 import type { D3Selection } from '../../../types.js';
+import { resolveImageUrl } from '../../../utils/imageUrlPolicy.js';
 
 export async function imageSquare<T extends SVGGraphicsElement>(
   parent: D3Selection<T>,
   node: Node,
-  { config: { flowchart } }: ShapeRenderOptions
+  { config }: ShapeRenderOptions
 ) {
-  const img = new Image();
-  img.src = node?.img ?? '';
-  await img.decode();
+  const resolvedImageUrl = await resolveImageUrl(node?.img ?? '', config);
+  const sanitizedImageUrl = resolvedImageUrl ? sanitizeUrl(resolvedImageUrl) : null;
+  const shouldRenderImage = sanitizedImageUrl !== null && sanitizedImageUrl !== 'about:blank';
 
-  const imageNaturalWidth = Number(img.naturalWidth.toString().replace('px', ''));
-  const imageNaturalHeight = Number(img.naturalHeight.toString().replace('px', ''));
+  const img = new Image();
+  if (shouldRenderImage) {
+    img.src = sanitizedImageUrl;
+    await img.decode();
+  }
+
+  const imageNaturalWidth = Number(img.naturalWidth.toString().replace('px', '')) || 1;
+  const imageNaturalHeight = Number(img.naturalHeight.toString().replace('px', '')) || 1;
   node.imageAspectRatio = imageNaturalWidth / imageNaturalHeight;
 
   const { labelStyles } = styles2String(node);
 
   node.labelStyle = labelStyles;
 
-  const defaultWidth = flowchart?.wrappingWidth;
-  node.defaultWidth = flowchart?.wrappingWidth;
+  const defaultWidth = config.flowchart?.wrappingWidth;
+  node.defaultWidth = config.flowchart?.wrappingWidth;
 
   const imageRawWidth = Math.max(
     node.label ? (defaultWidth ?? 0) : 0,
@@ -75,11 +83,11 @@ export async function imageSquare<T extends SVGGraphicsElement>(
   const iconShape = shapeSvg.insert(() => imageNode, ':first-child');
   const outerShape = shapeSvg.insert(() => outerNode);
 
-  if (node.img) {
+  if (shouldRenderImage) {
     const image = shapeSvg.append('image');
 
     // Set the image attributes
-    image.attr('href', node.img);
+    image.attr('href', sanitizedImageUrl);
     image.attr('width', imageWidth);
     image.attr('height', imageHeight);
     image.attr('preserveAspectRatio', 'none');

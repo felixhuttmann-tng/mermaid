@@ -1,6 +1,7 @@
 import { sanitizeUrl } from '@braintree/sanitize-url';
 import { select } from 'd3';
 import type { SVG, SVGGroup } from '../../diagram-api/types.js';
+import { getConfig } from '../../config.js';
 import { lineBreakRegex } from './common.js';
 import type {
   Bound,
@@ -13,6 +14,7 @@ import type {
   TextData,
   TextObject,
 } from './commonTypes.js';
+import { resolveImageUrl } from '../../utils/imageUrlPolicy.js';
 
 export const drawRect = (element: SVG | SVGGroup, rectData: RectData): D3RectElement => {
   const rectElement: D3RectElement = element.append('rect');
@@ -86,11 +88,19 @@ export const drawText = (element: SVG | SVGGroup, textData: TextData): D3TextEle
 };
 
 export const drawImage = (elem: SVG | SVGGroup, x: number, y: number, link: string): void => {
-  const imageElement: D3ImageElement = elem.append('image');
-  imageElement.attr('x', x);
-  imageElement.attr('y', y);
-  const sanitizedLink: string = sanitizeUrl(link);
-  imageElement.attr('xlink:href', sanitizedLink);
+  void resolveImageUrl(link, getConfig()).then((resolvedLink) => {
+    if (!resolvedLink) {
+      return;
+    }
+    const sanitizedLink: string = sanitizeUrl(resolvedLink);
+    if (sanitizedLink === 'about:blank') {
+      return;
+    }
+    const imageElement: D3ImageElement = elem.append('image');
+    imageElement.attr('x', x);
+    imageElement.attr('y', y);
+    imageElement.attr('xlink:href', sanitizedLink);
+  });
 };
 
 export const drawEmbeddedImage = (
