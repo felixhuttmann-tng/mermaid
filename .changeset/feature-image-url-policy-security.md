@@ -2,12 +2,12 @@
 'mermaid': minor
 ---
 
-feat: add `imageUrlPolicy` to control external image loading
+feat: add `filterExternalRequests` to restrict external requests
 
-Adds a new secure site-level configuration option, `imageUrlPolicy`, that is called before Mermaid sets image URLs for rendered diagrams.
+Adds a new secure site-level configuration option, `filterExternalRequests`, that can:
 
-- Return a string to allow (and optionally rewrite) an image URL.
-- Return `null` to block loading for that URL.
-- Supports async callbacks for user confirmation workflows.
+- block external resource requests and external links with `filterExternalRequests: true`
+- provide async `urls(url)` and `links(url)` callbacks for host-controlled filtering
+- strip or sanitize Mermaid-generated custom CSS with `filterCustomCss`
 
-The policy is enforced across Mermaid image loading paths used by diagram rendering so untrusted diagrams can be safely gated by host applications.
+`imageUrlPolicy` remains available as a deprecated alias for `filterExternalRequests.urls`.

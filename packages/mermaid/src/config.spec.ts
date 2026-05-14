@@ -17,12 +17,16 @@ describe('when working with site config', () => {
   });
   it('should respect secure keys when applying directives', () => {
     const imageUrlPolicy = ({ url }: { url: string }) => url;
+    const filterExternalRequests = {
+      urls: (url: string) => url,
+    };
     const config_0: MermaidConfig = {
       fontFamily: 'foo-font',
       securityLevel: 'strict', // can't be changed
       fontSize: 12345, // can't be changed
       secure: [...configApi.defaultConfig.secure!, 'fontSize'],
       imageUrlPolicy,
+      filterExternalRequests,
     };
     configApi.setSiteConfig(config_0);
     const directive: MermaidConfig = {
@@ -31,12 +35,16 @@ describe('when working with site config', () => {
       fontSize: 54321,
       securityLevel: 'loose',
       imageUrlPolicy: () => null,
+      filterExternalRequests: true,
     };
     const cfg: MermaidConfig = configApi.updateCurrentConfig(config_0, [directive]);
     expect(cfg.fontFamily).toEqual(directive.fontFamily);
     expect(cfg.fontSize).toBe(config_0.fontSize);
     expect(cfg.securityLevel).toBe(config_0.securityLevel);
     expect(cfg.imageUrlPolicy).toBe(imageUrlPolicy);
+    expect((cfg.filterExternalRequests as { urls?: (url: string) => string }).urls).toBe(
+      filterExternalRequests.urls
+    );
   });
   it('should allow setting partial options', () => {
     const defaultConfig = configApi.getConfig();

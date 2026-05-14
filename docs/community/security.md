@@ -24,6 +24,9 @@ Keep current with the latest Mermaid releases. We regularly update Mermaid, and 
 
 Keep your application’s dependencies up to date. Make sure you upgrade your package dependencies to keep the dependencies up to date. Avoid pinning to specific versions for your dependencies and, if you do, make sure you check periodically to see if your dependencies have had security updates, and update the pin accordingly.
 
+If you render Mermaid from untrusted or LLM-generated input, enable `filterExternalRequests`.
+Without it, diagrams can be used to load external resources, follow external links, or use Mermaid-generated custom CSS as an information exfiltration vector. Use `filterExternalRequests: true` for the most conservative mode, or provide filtering callbacks if you need to selectively allow URLs, links, or custom CSS.
+
 ## Configuring DomPurify
 
 By default Mermaid uses a baseline [DOMPurify](https://github.com/cure53/DOMPurify) config. It is possible to override the options passed to DOMPurify by adding a `dompurifyConfig` key to the Mermaid options. This could potentially break the output of Mermaid so use this with caution.

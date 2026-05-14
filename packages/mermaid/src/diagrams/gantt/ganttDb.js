@@ -6,6 +6,10 @@ import dayjsAdvancedFormat from 'dayjs/plugin/advancedFormat.js';
 import { log } from '../../logger.js';
 import { getConfig } from '../../diagram-api/diagramAPI.js';
 import utils from '../../utils.js';
+import {
+  resolveExternalLinkUrl,
+  shouldDeferLinkHandling,
+} from '../../utils/filterExternalRequests.js';
 
 import {
   setAccTitle,
@@ -653,14 +657,26 @@ const compileTasks = function () {
  */
 export const setLink = function (ids, _linkStr) {
   let linkStr = _linkStr;
-  if (getConfig().securityLevel !== 'loose') {
+  if (!shouldDeferLinkHandling(getConfig()) && getConfig().securityLevel !== 'loose') {
     linkStr = sanitizeUrl(_linkStr);
   }
   ids.split(',').forEach(function (id) {
     let rawTask = findTaskById(id);
     if (rawTask !== undefined) {
       pushFun(id, () => {
-        window.open(linkStr, '_self');
+        void resolveExternalLinkUrl(linkStr, getConfig()).then((resolvedLink) => {
+          if (!resolvedLink) {
+            return;
+          }
+
+          const sanitizedLink =
+            getConfig().securityLevel !== 'loose' ? sanitizeUrl(resolvedLink) : resolvedLink;
+          if (sanitizedLink === 'about:blank') {
+            return;
+          }
+
+          window.open(sanitizedLink, '_self');
+        });
       });
       links.set(id, linkStr);
     }

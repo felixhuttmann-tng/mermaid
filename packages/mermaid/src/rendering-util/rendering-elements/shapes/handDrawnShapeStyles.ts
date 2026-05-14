@@ -1,5 +1,6 @@
 import { getConfig } from '../../../diagram-api/diagramAPI.js';
 import type { Node } from '../../types.js';
+import { filterCustomStyleDeclarations } from '../../../utils/filterExternalRequests.js';
 
 // Striped fill like start or fork nodes in state diagrams
 export const solidStateFill = (color: string) => {
@@ -20,11 +21,12 @@ export const compileStyles = (node: Node) => {
   // the array is the styles of node from the classes it is using
   // node.cssStyles is an array of styles directly set on the node
   // concat the arrays and remove duplicates such that the values from node.cssStyles are used if there are duplicates
-  const stylesMap = styles2Map([
-    ...(node.cssCompiledStyles || []),
-    ...(node.cssStyles || []),
-    ...(node.labelStyle || []),
-  ]);
+  const stylesMap = styles2Map(
+    filterCustomStyleDeclarations(
+      [...(node.cssCompiledStyles || []), ...(node.cssStyles || []), ...(node.labelStyle || [])],
+      getConfig()
+    )
+  );
   return { stylesMap, stylesArray: [...stylesMap] };
 };
 

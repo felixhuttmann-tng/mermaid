@@ -18,8 +18,7 @@ describe('svgDrawCommon.drawImage', () => {
     const group = svg.append('g') as unknown as SVGGroup;
     drawImage(group, 10, 20, 'https://example.com/allowed.png');
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
 
     const svgNode = svg.node()!;
     const imageElement = svgNode.querySelector('image');
@@ -36,8 +35,7 @@ describe('svgDrawCommon.drawImage', () => {
     const group = svg.append('g') as unknown as SVGGroup;
     drawImage(group, 10, 20, 'https://example.com/blocked.png');
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
 
     expect(svg.node()!.querySelector('image')).toBeNull();
   });
@@ -50,8 +48,7 @@ describe('svgDrawCommon.drawImage', () => {
     const group = svg.append('g') as unknown as SVGGroup;
     drawImage(group, 10, 20, 'https://example.com/blocked-by-sanitizer.png');
 
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
 
     expect(svg.node()!.querySelector('image')).toBeNull();
   });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Mermaid Filter External Requests URL Demo</title>
+    <title>Mermaid external link confirmation demo</title>
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
     <style>
       body {
@@ -14,7 +14,7 @@
       textarea {
         box-sizing: border-box;
         width: min(100%, 40rem);
-        min-height: 14rem;
+        min-height: 12rem;
         font-family: 'Courier New', Courier, monospace;
       }
 
@@ -48,23 +48,13 @@
         min-height: 16rem;
         overflow: auto;
       }
-
-      code {
-        background: #f3f4f6;
-        padding: 0.1rem 0.3rem;
-        border-radius: 0.25rem;
-      }
     </style>
   </head>
   <body>
-    <h1>Filter external requests URL demo</h1>
+    <h1>External link confirmation demo</h1>
     <p>
-      This page shows <code>filterExternalRequests.urls</code> intercepting an external flowchart
-      image URL before Mermaid loads it.
-    </p>
-    <p>
-      Click <strong>Render diagram</strong>, then use the browser confirmation prompt to allow or
-      block the remote image.
+      This page shows <code>filterExternalRequests.links</code> using a browser confirmation popup
+      before Mermaid opens a built-in diagram link.
     </p>
 
     <label for="code">Diagram source</label><br />
@@ -72,8 +62,8 @@
     <button id="render" type="button">Render diagram</button>
 
     <div id="status" data-state="idle">
-      Waiting to render. The confirmation prompt will appear when Mermaid reaches the external
-      image.
+      Render the diagram, then click the <strong>Open docs</strong> node and respond to the browser
+      confirmation popup.
     </div>
     <div id="diagram"></div>
 
@@ -81,11 +71,11 @@
       import mermaid from './mermaid.esm.mjs';
 
       const defaultCode = `flowchart LR
-    intro[Click Render]
-    remote@{ img: "https://mermaid.js.org/favicon.svg", label: "External image", pos: "t", h: 80, constraint: "on" }
-    finish[Allow or block in the prompt]
+    intro[Render the diagram]
+    docs[Open docs]
 
-    intro --> remote --> finish`;
+    intro --> docs
+    click docs "https://mermaid.js.org/config/usage.html" _self`;
 
       const codeElement = document.getElementById('code');
       const diagramElement = document.getElementById('diagram');
@@ -102,44 +92,32 @@
       mermaid.initialize({
         startOnLoad: false,
         logLevel: 0,
+        securityLevel: 'loose',
         filterExternalRequests: {
-          urls: async (url) => {
-            const parsedUrl = new URL(url, window.location.href);
-            const externalUrl = parsedUrl.toString();
-            const isSameOrigin = parsedUrl.origin === window.location.origin;
-
-            if (isSameOrigin) {
-              setStatus(`Allowed same-origin image: ${externalUrl}`, 'allowed');
-              return externalUrl;
-            }
-
-            const approved = window.confirm(
-              `Allow Mermaid to load this external image?\n\n${externalUrl}\n\nPress OK to allow or Cancel to block.`
+          links: async (url) => {
+            const allowed = window.confirm(
+              `Allow Mermaid to open this link?\n\n${url}\n\nPress OK to allow or Cancel to block.`
             );
 
-            if (approved) {
-              setStatus(`Allowed external image: ${externalUrl}`, 'allowed');
-              return externalUrl;
+            if (allowed) {
+              setStatus(`Allowed link: ${url}`, 'allowed');
+              return url;
             }
 
-            setStatus(`Blocked external image: ${externalUrl}`, 'blocked');
+            setStatus(`Blocked link: ${url}`, 'blocked');
             return null;
           },
         },
       });
 
       const renderDiagram = async () => {
-        setStatus('Rendering diagram. Waiting for filterExternalRequests.urls...', 'idle');
-        const currentRenderId = `image-url-policy-demo-${renderId++}`;
+        setStatus('Rendering diagram. Click the "Open docs" node to test link filtering.', 'idle');
+        const currentRenderId = `filter-external-links-demo-${renderId++}`;
 
         try {
           const { svg, bindFunctions } = await mermaid.render(currentRenderId, codeElement.value);
           diagramElement.innerHTML = svg;
           bindFunctions?.(diagramElement);
-
-          if (statusElement.dataset.state === 'idle') {
-            setStatus('Rendered diagram without needing to rewrite the image URL.', 'allowed');
-          }
         } catch (error) {
           setStatus(
             `Rendering failed: ${error instanceof Error ? error.message : String(error)}`,

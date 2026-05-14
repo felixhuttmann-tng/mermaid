@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mermaid filterExternalRequests: true demo</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 2rem;
+      }
+
+      textarea {
+        box-sizing: border-box;
+        width: min(100%, 44rem);
+        min-height: 15rem;
+        font-family: 'Courier New', Courier, monospace;
+      }
+
+      button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+      }
+
+      #checks {
+        margin-top: 1rem;
+        padding-left: 1.25rem;
+      }
+
+      #diagram {
+        margin-top: 1.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        min-height: 16rem;
+        overflow: auto;
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><code>filterExternalRequests: true</code> demo</h1>
+    <p>
+      This page shows Mermaid’s conservative secure mode blocking external requests, blocking
+      external links, and stripping Mermaid-generated custom CSS.
+    </p>
+
+    <label for="code">Diagram source</label><br />
+    <textarea id="code" spellcheck="false"></textarea><br />
+    <button id="render" type="button">Render diagram</button>
+
+    <ul id="checks">
+      <li>Waiting to render.</li>
+    </ul>
+    <div id="diagram"></div>
+
+    <script type="module">
+      import mermaid from './mermaid.esm.mjs';
+
+      const defaultCode = `flowchart LR
+    start[Secure mode enabled]
+    remote@{ img: "https://mermaid.js.org/favicon.svg", label: "External image", pos: "t", h: 80, constraint: "on" }
+    blocked[Click me]
+
+    click blocked "https://example.com/leak" _blank
+    start --> remote --> blocked`;
+
+      const codeElement = document.getElementById('code');
+      const diagramElement = document.getElementById('diagram');
+      const checksElement = document.getElementById('checks');
+      let renderId = 0;
+
+      const renderChecks = (checks) => {
+        checksElement.innerHTML = '';
+        for (const check of checks) {
+          const item = document.createElement('li');
+          item.textContent = check;
+          checksElement.append(item);
+        }
+      };
+
+      codeElement.value = defaultCode;
+
+      mermaid.initialize({
+        startOnLoad: false,
+        logLevel: 0,
+        securityLevel: 'loose',
+        themeCSS: '.node rect { fill: url("https://example.com/tracker.png"); }',
+        filterExternalRequests: true,
+      });
+
+      const renderDiagram = async () => {
+        const currentRenderId = `filter-external-requests-demo-${renderId++}`;
+
+        try {
+          const { svg, bindFunctions } = await mermaid.render(currentRenderId, codeElement.value);
+          diagramElement.innerHTML = svg;
+          bindFunctions?.(diagramElement);
+
+          const styleText = diagramElement.querySelector('style')?.textContent ?? '';
+          const imageHref =
+            diagramElement.querySelector('image')?.getAttribute('href') ??
+            diagramElement.querySelector('image')?.getAttribute('xlink:href');
+          const linkElement = diagramElement.querySelector('[data-mermaid-link-url]');
+
+          renderChecks([
+            imageHref
+              ? `External image still has an href: ${imageHref}`
+              : 'External image request is blocked.',
+            linkElement && !linkElement.getAttribute('href')
+              ? 'External link is deferred and filtered before navigation.'
+              : 'External link is still directly navigable.',
+            styleText.includes('example.com') || styleText.includes('url(')
+              ? 'Mermaid-generated custom CSS is still present.'
+              : 'Mermaid-generated custom CSS is stripped.',
+          ]);
+        } catch (error) {
+          renderChecks([
+            `Rendering failed: ${error instanceof Error ? error.message : String(error)}`,
+          ]);
+          diagramElement.textContent = '';
+        }
+      };
+
+      document.getElementById('render').addEventListener('click', () => {
+        void renderDiagram();
+      });
+    </script>
+  </body>
+</html>

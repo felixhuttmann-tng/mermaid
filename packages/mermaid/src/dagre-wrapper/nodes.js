@@ -7,6 +7,7 @@ import createLabel from './createLabel.js';
 import intersect from './intersect/index.js';
 import note from './shapes/note.js';
 import { insertPolygonShape, labelHelper, updateNodeBounds } from './shapes/util.js';
+import { setD3LinkAttributes, shouldDeferLinkHandling } from '../utils/filterExternalRequests.js';
 
 const formatClass = (str) => {
   if (str) {
@@ -1150,7 +1151,12 @@ export const insertNode = async (elem, node, renderOptions) => {
     } else if (node.linkTarget) {
       target = node.linkTarget || '_blank';
     }
-    newEl = elem.insert('svg:a').attr('xlink:href', node.link).attr('target', target);
+    newEl = elem.insert('svg:a').attr('target', target);
+    if (shouldDeferLinkHandling(getConfig())) {
+      setD3LinkAttributes(newEl, node.link, target);
+    } else {
+      newEl.attr('xlink:href', node.link);
+    }
     el = await shapes[node.shape](newEl, node, renderOptions);
   } else {
     el = await shapes[node.shape](elem, node, renderOptions);

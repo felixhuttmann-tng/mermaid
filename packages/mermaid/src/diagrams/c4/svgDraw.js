@@ -1,6 +1,8 @@
 import common from '../common/common.js';
 import * as svgDrawCommon from '../common/svgDrawCommon.js';
 import { sanitizeUrl } from '@braintree/sanitize-url';
+import { getConfig } from '../../config.js';
+import { resolveExternalRequestUrl } from '../../utils/filterExternalRequests.js';
 
 export const drawRect = function (elem, rectData) {
   return svgDrawCommon.drawRect(elem, rectData);
@@ -12,8 +14,22 @@ export const drawImage = function (elem, width, height, x, y, link) {
   imageElem.attr('height', height);
   imageElem.attr('x', x);
   imageElem.attr('y', y);
-  let sanitizedLink = link.startsWith('data:image/png;base64') ? link : sanitizeUrl(link);
-  imageElem.attr('xlink:href', sanitizedLink);
+  void resolveExternalRequestUrl(link, getConfig()).then((resolvedLink) => {
+    if (!resolvedLink) {
+      imageElem.remove();
+      return;
+    }
+
+    const sanitizedLink = resolvedLink.startsWith('data:image/png;base64')
+      ? resolvedLink
+      : sanitizeUrl(resolvedLink);
+    if (sanitizedLink === 'about:blank') {
+      imageElem.remove();
+      return;
+    }
+
+    imageElem.attr('xlink:href', sanitizedLink);
+  });
 };
 
 export const drawRels = (elem, rels, conf, diagramId) => {
