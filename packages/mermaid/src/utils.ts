@@ -1,4 +1,5 @@
 import { sanitizeUrl } from '@braintree/sanitize-url';
+import { shouldDeferLinkHandling } from './utils/filterExternalRequests.js';
 import type { BaseType, CurveFactory } from 'd3';
 import {
   curveBasis,
@@ -249,6 +250,10 @@ export function formatUrl(linkStr: string, config: MermaidConfig): string | unde
 
   if (!url) {
     return undefined;
+  }
+
+  if (shouldDeferLinkHandling(config)) {
+    return url;
   }
 
   if (config.securityLevel !== 'loose') {

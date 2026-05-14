@@ -25,6 +25,7 @@ import theme from './themes/index.js';
 import type { D3Element, ParseOptions, ParseResult, RenderResult } from './types.js';
 import { decodeEntities } from './utils.js';
 import { toBase64 } from './utils/base64.js';
+import { bindDeferredLinks, filterCustomCssText } from './utils/filterExternalRequests.js';
 
 const MAX_TEXTLENGTH = 50_000;
 const MAX_TEXTLENGTH_EXCEEDED_MSG =
@@ -153,7 +154,7 @@ export const createCssStyles = (
       }
     });
   }
-  return cssStyles;
+  return filterCustomCssText(cssStyles, config);
 };
 
 export const createUserStyles = (
@@ -471,10 +472,15 @@ const render = async function (
 
   removeTempElements();
 
+  const bindFunctions = (element: Element) => {
+    diag.db.bindFunctions?.(element);
+    bindDeferredLinks(element, config);
+  };
+
   return {
     diagramType,
     svg: svgCode,
-    bindFunctions: diag.db.bindFunctions,
+    bindFunctions,
   };
 };
 

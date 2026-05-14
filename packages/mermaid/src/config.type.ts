@@ -167,13 +167,34 @@ export interface MermaidConfig {
    */
   securityLevel?: 'strict' | 'loose' | 'antiscript' | 'sandbox';
   /**
+   * Deprecated alias for `filterExternalRequests.urls`.
    * Optional callback for controlling image URLs before Mermaid sets image attributes.
-   * Mermaid calls this for external image URLs in diagram rendering code.
    * Return a URL string to allow (and optionally rewrite) the URL, or `null` to block loading.
    * This callback may be async to support user confirmation flows.
    *
    */
   imageUrlPolicy?: ({ url }: { url: string }) => string | null | Promise<string | null>;
+  /**
+   * Controls how Mermaid handles external requests and links from diagrams.
+   *
+   * Set this to `true` for a conservative mode that blocks external resource requests,
+   * blocks external links, and strips Mermaid-generated custom CSS.
+   *
+   * Set this to an object to supply targeted callbacks:
+   *
+   * - `urls(url)` controls URL-bearing resources such as images and media sources.
+   * - `links(url)` controls navigations triggered by Mermaid-generated links.
+   * - `filterCustomCss(css)` lets the host application sanitize or strip Mermaid-generated custom CSS.
+   *   Set `filterCustomCss: true` to strip Mermaid-generated custom CSS entirely.
+   *
+   */
+  filterExternalRequests?:
+    | true
+    | {
+        urls?: (url: string) => string | null | Promise<string | null>;
+        filterCustomCss?: true | ((css: string) => string | null | undefined);
+        links?: (url: string) => string | null | Promise<string | null>;
+      };
   /**
    * Dictates whether mermaid starts on Page load
    */

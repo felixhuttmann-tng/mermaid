@@ -16,6 +16,7 @@ import { splitLineToFitWidth } from './splitText.js';
 import type { MarkdownLine, MarkdownWord } from './types.js';
 import { getConfig } from '../config.js';
 import type { D3Selection } from '../types.js';
+import { filterExternalRequestsInHtml } from '../utils/filterExternalRequests.js';
 
 function applyStyle<T extends Element>(
   dom: d3.Selection<T, unknown, Element | null, unknown>,
@@ -48,9 +49,10 @@ async function addHtmlSpan(
   const sanitizedLabel = hasKatex(node.label)
     ? await renderKatexSanitized(node.label.replace(common.lineBreakRegex, '\n'), config)
     : sanitizeText(node.label, config);
+  const filteredLabel = await filterExternalRequestsInHtml(sanitizedLabel, config);
   const labelClass = node.isNode ? 'nodeLabel' : 'edgeLabel';
   const span = div.append('span');
-  span.html(sanitizedLabel);
+  span.html(filteredLabel);
   applyStyle(span, node.labelStyle);
   span.attr('class', `${labelClass} ${classes}`);
 

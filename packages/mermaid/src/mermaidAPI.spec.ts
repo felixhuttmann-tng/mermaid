@@ -425,6 +425,23 @@ describe('mermaidAPI', () => {
       expect(serialize).toHaveBeenCalled();
       expect(result).toEqual('stylis serialized css');
     });
+
+    it('strips Mermaid-generated custom CSS in conservative mode', () => {
+      createUserStyles(
+        { ...mockConfig, filterExternalRequests: true },
+        'flowchart-v2',
+        new Map([['classDef1', classDef1]]),
+        'someId'
+      );
+      expect(getStyles).toHaveBeenCalledWith(
+        'flowchart-v2',
+        '',
+        {
+          fontFamily: 'serif',
+        },
+        'someId'
+      );
+    });
   });
 
   describe('removeExistingElements', () => {

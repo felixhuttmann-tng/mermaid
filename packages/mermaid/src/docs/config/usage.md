@@ -132,42 +132,72 @@ mermaid.initialize({
 });
 ```
 
-## imageUrlPolicy
+## filterExternalRequests
 
-Use `imageUrlPolicy` to control external image URLs before Mermaid sets image sources.
-This is useful when diagram definitions may come from untrusted inputs.
+If you render Mermaid from untrusted input, Mermaid can otherwise be used as an information
+exfiltration vector through external resources, clickable links, and Mermaid-generated custom CSS.
+This is especially relevant for applications that render LLM-generated diagrams.
 
-`imageUrlPolicy` receives `{ url }` and may return:
+Use `filterExternalRequests` to mitigate that risk.
 
-- a `string` URL to allow (and optionally rewrite) the image URL
-- `null` to block loading that image URL
+### Conservative secure mode
 
-The callback can be asynchronous.
+Set `filterExternalRequests: true` to enable a restrictive mode that:
+
+- blocks external resource requests
+- blocks external links
+- strips Mermaid-generated custom CSS
+
+This is the simplest option when you need a safe default for untrusted diagrams.
 
 ```javascript
 mermaid.initialize({
-  imageUrlPolicy: ({ url }) => {
-    const parsed = new URL(url, window.location.href);
-    return parsed.hostname === 'trusted-images.example.com' ? parsed.toString() : null;
+  filterExternalRequests: true,
+});
+```
+
+### Custom URL, link, and CSS handling
+
+Set `filterExternalRequests` to an object when you want Mermaid to call back into your application.
+
+```javascript
+mermaid.initialize({
+  filterExternalRequests: {
+    urls: async (url) => {
+      const parsed = new URL(url, window.location.href);
+      return parsed.hostname === 'trusted-images.example.com' ? parsed.toString() : null;
+    },
+    links: async (url) => {
+      return window.confirm(`Open this Mermaid link?\n\n${url}`) ? url : null;
+    },
+    filterCustomCss: true,
   },
 });
 ```
 
-You can also use async user confirmation flows:
+Available callbacks:
 
-```javascript
-mermaid.initialize({
-  imageUrlPolicy: async ({ url }) => {
-    if (new URL(url, window.location.href).hostname === 'trusted-images.example.com') {
-      return url;
-    }
-    return (await userAllowsLoadingImage(url)) ? url : null;
-  },
-});
-```
+- `urls(url)` allows, rewrites, or blocks Mermaid-controlled resource URLs such as images and media
+  sources. Return a `string` to allow or rewrite the URL, or `null` to block it.
+- `links(url)` allows, rewrites, or blocks Mermaid-controlled links. Return a `string` to allow or
+  rewrite the URL, or `null` to block it.
+- `filterCustomCss(css)` receives Mermaid-generated custom CSS. Return the sanitized CSS string to
+  keep it, or return an empty string / `null` / `undefined` to strip it. You can also set
+  `filterCustomCss: true` to strip Mermaid-generated custom CSS entirely.
+
+### Security model
+
+- If you do **not** set `filterExternalRequests`, Mermaid diagrams may load external resources or
+  navigate to external links.
+- If you render diagrams from untrusted or LLM-generated input, use `filterExternalRequests: true`
+  unless you explicitly need custom callbacks.
+- Mermaid does **not** sanitize CSS for you. If you need Mermaid-generated custom CSS while also
+  restricting external requests, provide `filterCustomCss` yourself.
+- `filterExternalRequests` is a site-level secure option. It cannot be overridden by frontmatter or
+  directives.
 
 ```warning
-`imageUrlPolicy` is a site-level secure option. It cannot be overridden by frontmatter or directives.
+`imageUrlPolicy` is now a deprecated alias for `filterExternalRequests.urls`.
 ```
 
 ### Labels out of bounds

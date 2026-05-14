@@ -27,6 +27,7 @@ import {
 } from 'd3';
 import common from '../common/common.js';
 import { getConfig } from '../../diagram-api/diagramAPI.js';
+import { shouldDeferLinkHandling } from '../../utils/filterExternalRequests.js';
 import { configureSvgSize } from '../../setupGraphViewbox.js';
 
 dayjs.extend(dayjsDuration);
@@ -501,7 +502,7 @@ export const draw = function (text, id, version, diagObj) {
     const securityLevel = getConfig().securityLevel;
 
     // Wrap the tasks in a tag for working links without javascript
-    if (securityLevel === 'sandbox') {
+    if (securityLevel === 'sandbox' && !shouldDeferLinkHandling(getConfig())) {
       let sandboxElement;
       sandboxElement = select('#i' + id);
       const doc = sandboxElement.nodes()[0].contentDocument;

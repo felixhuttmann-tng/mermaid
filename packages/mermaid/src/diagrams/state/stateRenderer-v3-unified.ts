@@ -6,6 +6,7 @@ import { render } from '../../rendering-util/render.js';
 import { setupViewPortForSVG } from '../../rendering-util/setupViewPortForSVG.js';
 import type { LayoutData } from '../../rendering-util/types.js';
 import utils from '../../utils.js';
+import { applyRenderedLink } from '../../utils/filterExternalRequests.js';
 import { CSS_DIAGRAM, DEFAULT_NESTED_DOC_DIR } from './stateCommon.js';
 
 /**
@@ -112,8 +113,8 @@ export const draw = async function (text: string, id: string, _version: string, 
 
       const a = document.createElementNS('http://www.w3.org/2000/svg', 'a');
       const cleanedUrl = linkInfo.url.replace(/^"+|"+$/g, ''); // remove leading/trailing quotes
-      a.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', cleanedUrl);
       a.setAttribute('target', '_blank');
+      applyRenderedLink(a, cleanedUrl, '_blank', config);
       if (linkInfo.tooltip) {
         const tooltip = linkInfo.tooltip.replace(/^"+|"+$/g, '');
         a.setAttribute('title', tooltip);

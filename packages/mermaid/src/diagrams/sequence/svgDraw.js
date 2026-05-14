@@ -7,6 +7,10 @@ import common, {
   renderKatexSanitized,
 } from '../common/common.js';
 import * as svgDrawCommon from '../common/svgDrawCommon.js';
+import {
+  setD3LinkAttributes,
+  shouldDeferLinkHandling,
+} from '../../utils/filterExternalRequests.js';
 
 export const ACTOR_TYPE_WIDTH = 18 * 2;
 const TOP_ACTOR_CLASS = 'actor-top';
@@ -64,9 +68,13 @@ export const drawPopup = function (elem, actor, minMenuWidth, textAttrs, forceMe
     var linkY = 20;
     for (let key in links) {
       var linkElem = g.append('a');
-      var sanitizedLink = sanitizeUrl(links[key]);
-      linkElem.attr('xlink:href', sanitizedLink);
-      linkElem.attr('target', '_blank');
+      if (shouldDeferLinkHandling(configApi.getConfig())) {
+        setD3LinkAttributes(linkElem, links[key], '_blank');
+      } else {
+        var sanitizedLink = sanitizeUrl(links[key]);
+        linkElem.attr('xlink:href', sanitizedLink);
+        linkElem.attr('target', '_blank');
+      }
 
       _drawMenuItemTextCandidateFunc(textAttrs)(
         key,

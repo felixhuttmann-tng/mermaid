@@ -5,6 +5,10 @@ import { createRoundedRectPathD } from './roundedRectPath.js';
 import { userNodeOverrides, styles2String } from './handDrawnShapeStyles.js';
 import rough from 'roughjs';
 import type { D3Selection } from '../../../types.js';
+import {
+  setD3LinkAttributes,
+  shouldDeferLinkHandling,
+} from '../../../utils/filterExternalRequests.js';
 
 const colorFromPriority = (priority: NonNullable<KanbanNode['priority']>) => {
   switch (priority) {
@@ -47,9 +51,12 @@ export async function kanbanItem<T extends SVGGraphicsElement>(
     ticketUrl = config?.kanban?.ticketBaseUrl.replace('#TICKET#', kanbanNode.ticket);
     link = shapeSvg
       .insert<SVGAElement>('svg:a', ':first-child')
-      .attr('class', 'kanban-ticket-link')
-      .attr('xlink:href', ticketUrl)
-      .attr('target', '_blank');
+      .attr('class', 'kanban-ticket-link');
+    if (shouldDeferLinkHandling(config)) {
+      setD3LinkAttributes(link, ticketUrl, '_blank');
+    } else {
+      link.attr('xlink:href', ticketUrl).attr('target', '_blank');
+    }
   }
 
   const options = {

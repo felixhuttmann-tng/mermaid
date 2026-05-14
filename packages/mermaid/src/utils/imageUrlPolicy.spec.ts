@@ -44,4 +44,25 @@ describe('resolveImageUrl', () => {
       } as MermaidConfig)
     ).resolves.toBeNull();
   });
+
+  it('uses the nested filterExternalRequests.urls callback', async () => {
+    const urls = vi.fn().mockResolvedValue('/safe/image.png');
+
+    await expect(
+      resolveImageUrl('https://example.com/image.png', {
+        filterExternalRequests: {
+          urls,
+        },
+      } as MermaidConfig)
+    ).resolves.toBe('/safe/image.png');
+    expect(urls).toHaveBeenCalledWith('https://example.com/image.png');
+  });
+
+  it('blocks external URLs in conservative mode', async () => {
+    await expect(
+      resolveImageUrl('https://example.com/image.png', {
+        filterExternalRequests: true,
+      } as MermaidConfig)
+    ).resolves.toBeNull();
+  });
 });

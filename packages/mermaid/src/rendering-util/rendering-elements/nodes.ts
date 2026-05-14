@@ -5,6 +5,10 @@ import type { SVGGroup } from '../../mermaid.js';
 import type { D3Selection } from '../../types.js';
 import { handleUndefinedAttr } from '../../utils.js';
 import type { graphlib } from 'dagre-d3-es';
+import {
+  setD3LinkAttributes,
+  shouldDeferLinkHandling,
+} from '../../utils/filterExternalRequests.js';
 
 type ShapeHandler = (typeof shapes)[keyof typeof shapes];
 type NodeElement = D3Selection<SVGAElement> | Awaited<ReturnType<ShapeHandler>>;
@@ -42,10 +46,12 @@ export async function insertNode(
     } else if (node.linkTarget) {
       target = node.linkTarget || '_blank';
     }
-    newEl = elem
-      .insert<SVGAElement>('svg:a')
-      .attr('xlink:href', node.link)
-      .attr('target', target ?? null);
+    newEl = elem.insert<SVGAElement>('svg:a').attr('target', target ?? null);
+    if (shouldDeferLinkHandling(renderOptions.config)) {
+      setD3LinkAttributes(newEl, node.link, target);
+    } else {
+      newEl.attr('xlink:href', node.link);
+    }
     el = await shapeHandler(newEl, node, renderOptions);
   } else {
     el = await shapeHandler(elem, node, renderOptions);

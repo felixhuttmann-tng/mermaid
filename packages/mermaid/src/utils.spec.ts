@@ -328,6 +328,17 @@ describe('when formatting urls', function () {
     result = utils.formatUrl(url, { securityLevel: 'strict' });
     expect(result).toEqual('about:blank');
   });
+  it('should preserve raw links when deferred link handling is enabled', function () {
+    const url = 'javascript:alert("test")';
+
+    const result = utils.formatUrl(url, {
+      securityLevel: 'strict',
+      filterExternalRequests: {
+        links: (link) => Promise.resolve(link),
+      },
+    });
+    expect(result).toEqual(url);
+  });
 });
 
 describe('when initializing the id generator', function () {

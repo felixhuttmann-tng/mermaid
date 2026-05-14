@@ -2,6 +2,10 @@ import { line, curveBasis } from 'd3';
 import utils from '../../utils.js';
 import { log } from '../../logger.js';
 import { parseGenericTypes, getUrl } from '../common/common.js';
+import {
+  setD3LinkAttributes,
+  shouldDeferLinkHandling,
+} from '../../utils/filterExternalRequests.js';
 
 let edgeCount = 0;
 export const drawEdge = function (elem, path, relation, conf, diagObj) {
@@ -167,10 +171,13 @@ export const drawClass = function (elem, classDef, conf, diagObj) {
 
   let title;
   if (classDef.link) {
-    title = g
-      .append('svg:a')
-      .attr('xlink:href', classDef.link)
-      .attr('target', classDef.linkTarget)
+    const link = g.append('svg:a').attr('target', classDef.linkTarget);
+    if (shouldDeferLinkHandling(conf)) {
+      setD3LinkAttributes(link, classDef.link, classDef.linkTarget);
+    } else {
+      link.attr('xlink:href', classDef.link);
+    }
+    title = link
       .append('text')
       .attr('y', conf.textHeight + conf.padding)
       .attr('x', 0);
