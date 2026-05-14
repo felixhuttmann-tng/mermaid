@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Mermaid Image URL Policy Demo</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=" />
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 2rem;
+      }
+
+      textarea {
+        box-sizing: border-box;
+        width: min(100%, 40rem);
+        min-height: 14rem;
+        font-family: 'Courier New', Courier, monospace;
+      }
+
+      button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+      }
+
+      #status {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-left: 4px solid #2563eb;
+        background: #eff6ff;
+      }
+
+      #status[data-state='allowed'] {
+        border-left-color: #15803d;
+        background: #f0fdf4;
+      }
+
+      #status[data-state='blocked'] {
+        border-left-color: #b91c1c;
+        background: #fef2f2;
+      }
+
+      #diagram {
+        margin-top: 1.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        min-height: 16rem;
+        overflow: auto;
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Image URL policy demo</h1>
+    <p>
+      This page shows <code>imageUrlPolicy</code> intercepting an external flowchart image URL before
+      Mermaid loads it.
+    </p>
+    <p>
+      Click <strong>Render diagram</strong>, then use the browser confirmation prompt to allow or block
+      the remote image.
+    </p>
+
+    <label for="code">Diagram source</label><br />
+    <textarea id="code" spellcheck="false"></textarea><br />
+    <button id="render" type="button">Render diagram</button>
+
+    <div id="status" data-state="idle">
+      Waiting to render. The confirmation prompt will appear when Mermaid reaches the external image.
+    </div>
+    <div id="diagram"></div>
+
+    <script type="module">
+      import mermaid from './mermaid.esm.mjs';
+
+      const defaultCode = `flowchart LR
+    intro[Click Render]
+    remote@{ img: "https://mermaid.js.org/favicon.svg", label: "External image", pos: "t", h: 80, constraint: "on" }
+    finish[Allow or block in the prompt]
+
+    intro --> remote --> finish`;
+
+      const codeElement = document.getElementById('code');
+      const diagramElement = document.getElementById('diagram');
+      const statusElement = document.getElementById('status');
+      let renderId = 0;
+
+      const setStatus = (message, state = 'idle') => {
+        statusElement.dataset.state = state;
+        statusElement.textContent = message;
+      };
+
+      codeElement.value = defaultCode;
+
+      mermaid.initialize({
+        startOnLoad: false,
+        logLevel: 0,
+        imageUrlPolicy: async ({ url }) => {
+          const parsedUrl = new URL(url, window.location.href);
+          const externalUrl = parsedUrl.toString();
+          const isSameOrigin = parsedUrl.origin === window.location.origin;
+
+          if (isSameOrigin) {
+            setStatus(`Allowed same-origin image: ${externalUrl}`, 'allowed');
+            return externalUrl;
+          }
+
+          const approved = window.confirm(
+            `Allow Mermaid to load this external image?\n\n${externalUrl}\n\nPress OK to allow or Cancel to block.`
+          );
+
+          if (approved) {
+            setStatus(`Allowed external image: ${externalUrl}`, 'allowed');
+            return externalUrl;
+          }
+
+          setStatus(`Blocked external image: ${externalUrl}`, 'blocked');
+          return null;
+        },
+      });
+
+      const renderDiagram = async () => {
+        setStatus('Rendering diagram. Waiting for imageUrlPolicy...', 'idle');
+        const currentRenderId = `image-url-policy-demo-${renderId++}`;
+
+        try {
+          const { svg, bindFunctions } = await mermaid.render(currentRenderId, codeElement.value);
+          diagramElement.innerHTML = svg;
+          bindFunctions?.(diagramElement);
+
+          if (statusElement.dataset.state === 'idle') {
+            setStatus('Rendered diagram without needing to rewrite the image URL.', 'allowed');
+          }
+        } catch (error) {
+          setStatus(
+            `Rendering failed: ${error instanceof Error ? error.message : String(error)}`,
+            'blocked'
+          );
+          diagramElement.textContent = '';
+        }
+      };
+
+      document.getElementById('render').addEventListener('click', () => {
+        void renderDiagram();
+      });
+    </script>
+  </body>
+</html>
