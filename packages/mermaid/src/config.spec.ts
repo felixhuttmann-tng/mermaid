@@ -42,7 +42,9 @@ describe('when working with site config', () => {
     expect(cfg.fontSize).toBe(config_0.fontSize);
     expect(cfg.securityLevel).toBe(config_0.securityLevel);
     expect(cfg.imageUrlPolicy).toBe(imageUrlPolicy);
-    expect(cfg.filterExternalRequests).toBe(filterExternalRequests);
+    expect((cfg.filterExternalRequests as { urls?: (url: string) => string }).urls).toBe(
+      filterExternalRequests.urls
+    );
   });
   it('should allow setting partial options', () => {
     const defaultConfig = configApi.getConfig();

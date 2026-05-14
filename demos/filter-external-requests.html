@@ -69,8 +69,6 @@
     blocked[Click me]
 
     click blocked "https://example.com/leak" _blank
-    style blocked fill:url("https://example.com/tracker.png")
-
     start --> remote --> blocked`;
 
       const codeElement = document.getElementById('code');
@@ -93,6 +91,7 @@
         startOnLoad: false,
         logLevel: 0,
         securityLevel: 'loose',
+        themeCSS: '.node rect { fill: url("https://example.com/tracker.png"); }',
         filterExternalRequests: true,
       });
 

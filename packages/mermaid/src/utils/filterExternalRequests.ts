@@ -283,23 +283,9 @@ const bindDeferredLink = (linkElement: LinkLikeElement, config: MermaidConfig) =
     }
 
     const target = linkElement.getAttribute(FILTERED_LINK_TARGET_ATTR) ?? '_self';
-    const needsPopup = !['_self', '_top', '_parent'].includes(target);
-    const popup = needsPopup ? window.open('', target, 'noopener') : null;
-
     const resolvedUrl = await resolveExternalLinkUrl(rawUrl, config);
     const sanitizedUrl = sanitizeResolvedUrl(resolvedUrl);
     if (!sanitizedUrl) {
-      popup?.close();
-      return;
-    }
-
-    if (popup) {
-      popup.location.replace(sanitizedUrl);
-      try {
-        popup.opener = null;
-      } catch {
-        // Ignore cross-origin popup restrictions.
-      }
       return;
     }
 

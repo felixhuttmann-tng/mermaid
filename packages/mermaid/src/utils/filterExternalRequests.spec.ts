@@ -82,14 +82,7 @@ describe('filterExternalRequests helpers', () => {
   });
 
   jsdomIt('binds deferred links and opens sanitized allowed URLs', async () => {
-    const popup = {
-      location: {
-        replace: vi.fn(),
-      },
-      close: vi.fn(),
-      opener: null,
-    };
-    const open = vi.spyOn(window, 'open').mockReturnValue(popup as never);
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
 
     const element = document.createElement('a');
     setLinkAttributes(element, 'https://example.com', '_blank');
@@ -102,10 +95,8 @@ describe('filterExternalRequests helpers', () => {
     } as MermaidConfig);
 
     element.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
 
-    expect(open).toHaveBeenCalledWith('', '_blank', 'noopener');
-    expect(popup.location.replace).toHaveBeenCalledWith('https://example.com');
+    expect(open).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener');
   });
 });
