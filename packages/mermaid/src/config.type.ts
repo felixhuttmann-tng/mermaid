@@ -167,6 +167,14 @@ export interface MermaidConfig {
    */
   securityLevel?: 'strict' | 'loose' | 'antiscript' | 'sandbox';
   /**
+   * Optional callback for controlling image URLs before Mermaid sets image attributes.
+   * Mermaid calls this for external image URLs in diagram rendering code.
+   * Return a URL string to allow (and optionally rewrite) the URL, or `null` to block loading.
+   * This callback may be async to support user confirmation flows.
+   *
+   */
+  imageUrlPolicy?: ({ url }: { url: string }) => string | null | Promise<string | null>;
+  /**
    * Dictates whether mermaid starts on Page load
    */
   startOnLoad?: boolean;
